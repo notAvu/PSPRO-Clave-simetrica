@@ -30,8 +30,8 @@ public class KeyFileManager {
     }
 
     public void WriteBytes(byte[] inputBytes) {
-        iniWriter();
         try {
+            iniWriter();
             keyWriter.write(inputBytes);
             keyWriter.flush();
             keyWriter.close();
@@ -41,8 +41,8 @@ public class KeyFileManager {
     }
     public byte[] ReadFileBytes() {
         byte[] readBytes= new byte[0];
-        iniReader();
         try {
+            iniReader();
             readBytes= keyReader.readAllBytes();
             keyReader.close();
         } catch (IOException e) {
