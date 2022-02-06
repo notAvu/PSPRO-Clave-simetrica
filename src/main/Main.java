@@ -125,8 +125,15 @@ public class Main {
             SecureRandom srand = SecureRandom.getInstance("SHA1PRNG");
             genClaves.init(srand);
             key = genClaves.generateKey();
-            SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
-            writeKey(algorithm, key, keySpecFactory);
+            if(!algorithm.equals("AES")) {
+                SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
+                writeKey(algorithm, key, keySpecFactory);
+            }
+            else
+            {
+//                SecretKeySpec keySpec= new SecretKeySpec(, algorithm);
+            }
+
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
