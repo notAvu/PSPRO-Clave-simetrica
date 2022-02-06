@@ -1,6 +1,11 @@
 package FileManager;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class KeyFileManager {
     private File keyFile;
@@ -28,8 +33,16 @@ public class KeyFileManager {
             e.printStackTrace();
         }
     }
+    private byte[] toBytes(char[] chars) {
+        CharBuffer charBuffer = CharBuffer.wrap(chars);
+        ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(charBuffer);
+        byte[] bytes = Arrays.copyOfRange(byteBuffer.array(),
+                byteBuffer.position(), byteBuffer.limit());
+        Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
+        return bytes;
+    }
 
-    public void WriteBytes(byte[] inputBytes) {
+    public void writeByteKey(byte[] inputBytes) {
         try {
             iniWriter();
             keyWriter.write(inputBytes);
@@ -39,7 +52,17 @@ public class KeyFileManager {
             e.printStackTrace();
         }
     }
-    public byte[] ReadFileBytes() {
+    public void writeCharKey(char[] inputBytes) {
+        try {
+            iniWriter();
+            keyWriter.write(toBytes(inputBytes));
+            keyWriter.flush();
+            keyWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public byte[] readKey() {
         byte[] readBytes= new byte[0];
         try {
             iniReader();
