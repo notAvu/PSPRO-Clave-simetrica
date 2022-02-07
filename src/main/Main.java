@@ -97,7 +97,10 @@ public class Main {
         Cipher cipher = null;
         getIvParameterSpec();
         try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            if (algorithm.equals("AES"))
+                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            else
+                cipher=Cipher.getInstance(algorithm);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
         }
@@ -119,18 +122,16 @@ public class Main {
     }
 
     private static void generateKey(String algorithm) {
-        SecretKey key ;
+        SecretKey key;
         try {
             KeyGenerator genClaves = KeyGenerator.getInstance(algorithm);
             SecureRandom srand = SecureRandom.getInstance("SHA1PRNG");
             genClaves.init(srand);
             key = genClaves.generateKey();
-            if(!algorithm.equals("AES")) {
+            if (!algorithm.equals("AES")) {
                 SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
                 writeKey(algorithm, key, keySpecFactory);
-            }
-            else
-            {
+            } else {
 //                SecretKeySpec keySpec= new SecretKeySpec(, algorithm);
             }
 
