@@ -9,30 +9,36 @@ import java.util.Arrays;
 
 public class KeyFileManager {
     private File keyFile;
-    private FileOutputStream keyWriter;
-    private FileInputStream keyReader;
-    public KeyFileManager(String fileName)
-    {
-        keyFile=new File(fileName);
-        iniWriter();
-        iniReader();
+//    private FileOutputStream keyWriter;
+//    private FileInputStream keyReader;
+
+    public KeyFileManager(String fileName) {
+                keyFile = new File(fileName);
+//        try {
+//            keyFile.createNewFile();
+//        } catch (IOException exception) {
+//            exception.printStackTrace();
+////        }
+//        iniWriter();
+//        iniReader();
     }
 
-    private void iniReader() {
-        try {
-            keyReader= new FileInputStream(keyFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
+//    private void iniReader() {
+//        try {
+//            keyReader = new FileInputStream(keyFile);
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void iniWriter() {
+//        try {
+//            keyWriter = new FileOutputStream(keyFile);
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-    private void iniWriter() {
-        try {
-            keyWriter= new FileOutputStream(keyFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
     private byte[] toBytes(char[] chars) {
         CharBuffer charBuffer = CharBuffer.wrap(chars);
         ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(charBuffer);
@@ -43,32 +49,28 @@ public class KeyFileManager {
     }
 
     public void writeByteKey(byte[] inputBytes) {
-        try {
-            iniWriter();
-            keyWriter.write(inputBytes);
-            keyWriter.flush();
-            keyWriter.close();
+        try (FileOutputStream keywriter= new FileOutputStream(keyFile)){
+            keywriter.write(inputBytes);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void writeCharKey(char[] inputBytes) {
-        try {
-            iniWriter();
-            keyWriter.write(toBytes(inputBytes));
-            keyWriter.flush();
-            keyWriter.close();
+
+    public void writeCharKey(char[] inputChar) {
+        try (FileOutputStream keywriter= new FileOutputStream(keyFile)){
+            keywriter.write(toBytes(inputChar));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
     public byte[] readKey() {
-        byte[] readBytes= new byte[0];
-        try {
-            iniReader();
-            readBytes= keyReader.readAllBytes();
-            keyReader.close();
+        byte[] readBytes ;
+        try (FileInputStream keyReader= new FileInputStream(keyFile)){
+//            iniReader();
+            readBytes = keyReader.readAllBytes();
         } catch (IOException e) {
+            readBytes=new byte[0];
             e.printStackTrace();
         }
         return readBytes;

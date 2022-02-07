@@ -15,7 +15,7 @@ public class EncryptionFileManager {
     private void iniStreams() {
         try {
             fis = new FileInputStream(file);
-            fos = new FileOutputStream(file);
+            fos = new FileOutputStream(file, false);
             is = new BufferedInputStream(fis);
             os = new BufferedOutputStream(fos);
         } catch (FileNotFoundException e) {
@@ -38,24 +38,24 @@ public class EncryptionFileManager {
     public byte[] readAllBytes()
     {
         byte[] readBytes=null;
-        iniStreams();
-        try {
+//        iniStreams();
+        try (BufferedInputStream is= new BufferedInputStream(new FileInputStream(file))){
             readBytes=is.readAllBytes();
         } catch (IOException exception) {
             exception.printStackTrace();
         }
-        closeStreams();
+//        closeStreams();
         return readBytes;
     }
     public void writeAllBytes(byte[] bytes)
     {
-        iniStreams();
-        try {
+//        iniStreams();
+        try(BufferedOutputStream os= new BufferedOutputStream(new FileOutputStream(file))) {
             os.write(bytes);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
-        closeStreams();
+//        closeStreams();
 //        byte[] buff = new byte[cifrado.getBlockSize()];
 //        while(is.read(bytes) != -1) {
 //            os.write(cifrado.update(buff));

@@ -5,12 +5,14 @@ import FileManager.KeyFileManager;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import java.io.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class Main {
-    private static String algorithm = "AES";
+//    private static String algorithm = "AES";
+    public static File keyAlgorithmFile;
     public static KeyFileManager keyManager;
     public static EncryptionFileManager decryptManager;
     public static EncryptionFileManager encryptManager;
@@ -48,11 +50,21 @@ public class Main {
         decryptManager = new EncryptionFileManager(decryptedFileName);
         byte[] input = encryptManager.readAllBytes();
         Cipher cipher = getCipher();
-        IvParameterSpec ivParameterSpec = getIvParameterSpec();
-        generateKey(algorithm);
-        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
-        byte[] decrypted = decryptInput(input, privateKey, cipher, ivParameterSpec);
+//        IvParameterSpec ivParameterSpec = getIvParameterSpec();
+//        generateKey(algorithm);
+        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), getAlgorithm());
+        byte[] decrypted = decryptInput(input, privateKey, cipher);
         decryptManager.writeAllBytes(decrypted);
+    }
+
+    private static String getAlgorithm() {
+        String algorithm="";
+        try (BufferedReader is= new BufferedReader(new FileReader(keyAlgorithmFile))){
+            algorithm=is.readLine();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return algorithm;
     }
 
     private static void encryptFile(Scanner sc) {
@@ -67,10 +79,10 @@ public class Main {
         encryptManager = new EncryptionFileManager(encryptedFileName);
         byte[] input = decryptManager.readAllBytes();
         Cipher cipher = getCipher();
-        IvParameterSpec ivParameterSpec = getIvParameterSpec();
-        generateKey(algorithm);
-        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
-        byte[] encrypted = encryptInput(input, privateKey, cipher, ivParameterSpec);
+//        IvParameterSpec ivParameterSpec = getIvParameterSpec();
+//        generateKey(algorithm);
+        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), getAlgorithm());
+        byte[] encrypted = encryptInput(input, privateKey, cipher);
         encryptManager.writeAllBytes(encrypted);
     }
 
@@ -86,16 +98,26 @@ public class Main {
                 """);
         String choice = sc.next();
         switch (choice) {
-            case "2" -> algorithm = "DES";
-            case "3" -> algorithm = "DESede";
-            default -> algorithm = "AES";
+            case "2" -> writeAlgorithm("DES");
+            case "3" -> writeAlgorithm("DESede");
+            default -> writeAlgorithm("AES");
         }
-        generateKey(algorithm);
+        generateKey(getAlgorithm());
+    }
+
+    private static void writeAlgorithm(String algorithm) {
+        try(BufferedWriter os= new BufferedWriter(new FileWriter(keyAlgorithmFile)))
+        {
+            os.write(algorithm);
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     private static Cipher getCipher() {
         Cipher cipher = null;
         getIvParameterSpec();
+        String algorithm=getAlgorithm();
         try {
             if (algorithm.equals("AES"))
                 cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -128,74 +150,54 @@ public class Main {
             SecureRandom srand = SecureRandom.getInstance("SHA1PRNG");
             genClaves.init(srand);
             key = genClaves.generateKey();
-            if (!algorithm.equals("AES")) {
-                SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
-                writeKey(algorithm, key, keySpecFactory);
-            } else {
-//                SecretKeySpec keySpec= new SecretKeySpec(, algorithm);
-            }
+            writeKey(algorithm, key);
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-
-//        SecretKeySpec keySpec = new SecretKeySpec(valorClave, ALGORITMO_CLAVE_SIMETRICA);
-//        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITMO_CLAVE_SIMETRICA);
-//        SecretKey clave = keyFactory.generateSecret(keySpec);
-//        Cipher cifrado = Cipher.getInstance(ALGORITMO_CLAVE_SIMETRICA);
-//        cifrado.init(Cipher.ENCRYPT_MODE, clave);
-//
-//        try {
-//            PBEKeySpec keySpec = (PBEKeySpec) keyFactory.getKeySpec(key, PBEKeySpec.class);
-//            keyManager.writeCharKey(keySpec.getPassword());
-//        } catch (InvalidKeySpecException e) {
-//            e.printStackTrace();
-//        }
-//
-//        byte[] valorClave = keySpec.getKey();
     }
 
-    private static void writeKey(String algorithm, SecretKey key, SecretKeyFactory keySpecFactory) {
+    private static void writeKey(String algorithm, SecretKey key) {
         switch (algorithm) {
             case "DESede" -> {
                 try {
+                    SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
                     DESedeKeySpec keySpec = (DESedeKeySpec) keySpecFactory.getKeySpec(key, DESedeKeySpec.class);
                     keyManager.writeByteKey(keySpec.getKey());
-                } catch (InvalidKeySpecException e) {
+                } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
             }
             case "DES" -> {
                 try {
+
+                    SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
                     DESKeySpec keySpec = (DESKeySpec) keySpecFactory.getKeySpec(key, DESKeySpec.class);
                     keyManager.writeByteKey(keySpec.getKey());
-                } catch (InvalidKeySpecException e) {
+                } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
             }
             case "AES" -> {
-                try {
-                    PBEKeySpec keyspec = (PBEKeySpec) keySpecFactory.getKeySpec(key, PBEKeySpec.class);
-                    keyManager.writeCharKey(keyspec.getPassword());
-                } catch (InvalidKeySpecException e) {
-                    e.printStackTrace();
-                }
+                SecretKeySpec keySpec= new SecretKeySpec(key.getEncoded(), algorithm);
+//                    PBEKeySpec keyspec = (PBEKeySpec) keySpec.getKeySpec(key, PBEKeySpec.class);
+                keyManager.writeByteKey(keySpec.getEncoded());
             }
         }
     }
 
-    private static byte[] decryptInput(byte[] input, SecretKey privateKey, Cipher cipher, IvParameterSpec ivParameterSpec) {
+    private static byte[] decryptInput(byte[] input, SecretKey privateKey, Cipher cipher) {
         byte[] decryptedOutput = new byte[0];
         try {
-            cipher.init(Cipher.DECRYPT_MODE, privateKey, ivParameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
             decryptedOutput = cipher.doFinal(input);
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
             e.printStackTrace();
         }
         return decryptedOutput;
     }
 
-    private static byte[] encryptInput(byte[] input, SecretKey privateKey, Cipher cipher, IvParameterSpec ivParameterSpec) {
+    private static byte[] encryptInput(byte[] input, SecretKey privateKey, Cipher cipher) {
         byte[] encryptedOutput = new byte[cipher.getBlockSize()];
         try {
             cipher.init(Cipher.ENCRYPT_MODE, privateKey);
