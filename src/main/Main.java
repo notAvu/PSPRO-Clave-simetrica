@@ -2,20 +2,18 @@ package main;
 
 import FileManager.EncryptionFileManager;
 import FileManager.KeyFileManager;
+import operators.Encrypter;
+import operators.KeyGenerator;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.io.*;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class Main {
-//    private static String algorithm = "AES";
     public static KeyFileManager keyManager;
     public static EncryptionFileManager decryptManager;
     public static EncryptionFileManager encryptManager;
-
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String respuesta = "4";
@@ -43,24 +41,13 @@ public class Main {
         System.out.println("Introduzca el nombre del fichero que desea desencriptar");
         String encryptedFileName = sc.next();
         encryptManager = new EncryptionFileManager(encryptedFileName);
-        String algorithm=getAlgorithm();
+        String algorithm= readAlgorithm();
         String decryptedFileName = encryptedFileName + ".decrypt";
         decryptManager = new EncryptionFileManager(decryptedFileName);
         byte[] input = encryptManager.readAllBytes();
-        Cipher cipher = getCipher();
         SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
-        byte[] decrypted = decryptInput(input, privateKey, cipher);
+        byte[] decrypted =new Encrypter(privateKey, algorithm).decryptInput(input);
         decryptManager.writeAllBytes(decrypted);
-    }
-
-    private static String getAlgorithm() {
-        String algorithm="";
-        try (BufferedReader is= new BufferedReader(new FileReader(keyManager.getKeyFile().getName()+".algor"))){
-            algorithm=is.readLine();
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
-        return algorithm;
     }
 
     private static void encryptFile(Scanner sc) {
@@ -70,16 +57,12 @@ public class Main {
         System.out.println("Introduzca el nombre del fichero que desea encriptar");
         String decryptedFileName = sc.next();
         decryptManager = new EncryptionFileManager(decryptedFileName);
-        String algorithm=getAlgorithm();
+        String algorithm= readAlgorithm();
         String encryptedFileName = decryptedFileName+"."+algorithm;
         encryptManager = new EncryptionFileManager(encryptedFileName);
         byte[] input = decryptManager.readAllBytes();
-        Cipher cipher = getCipher();
-//        IvParameterSpec ivParameterSpec = getIvParameterSpec();
-//        generateKey(algorithm);
         SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
-        byte[] encrypted = encryptInput(input, privateKey, cipher);
-        encryptManager.writeAllBytes(encrypted);
+        encryptManager.writeAllBytes(new Encrypter(privateKey, algorithm).encryptInput(input));
     }
 
     private static void selectKey(Scanner sc) {
@@ -98,7 +81,18 @@ public class Main {
             case "3" -> writeAlgorithm("DESede");
             default -> writeAlgorithm("AES");
         }
-        generateKey(getAlgorithm());
+        String algorithm= readAlgorithm();
+        keyManager.writeKey(algorithm, KeyGenerator.generateKey(algorithm));
+    }
+
+    private static String readAlgorithm() {
+        String algorithm="";
+        try (BufferedReader is= new BufferedReader(new FileReader(keyManager.getKeyFile().getName()+".algor"))){
+            algorithm=is.readLine();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return algorithm;
     }
 
     private static void writeAlgorithm(String algorithm) {
@@ -110,22 +104,6 @@ public class Main {
         }
 
     }
-
-    private static Cipher getCipher() {
-        Cipher cipher = null;
-//        getIvParameterSpec();
-        String algorithm=getAlgorithm();
-        try {
-            if (algorithm.equals("AES"))
-                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            else
-                cipher=Cipher.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-        return cipher;
-    }
-
 //    private static IvParameterSpec getIvParameterSpec() {
 //        SecureRandom random;
 //        byte[] bytes = new byte[16];
@@ -139,41 +117,4 @@ public class Main {
 //        }
 //        return ivSpec;
 //    }
-
-    private static void generateKey(String algorithm) {
-        SecretKey key;
-        try {
-            KeyGenerator genClaves = KeyGenerator.getInstance(algorithm);
-            SecureRandom srand = SecureRandom.getInstance("SHA1PRNG");
-            genClaves.init(srand);
-            key = genClaves.generateKey();
-            keyManager.writeKey(algorithm, key);
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static byte[] decryptInput(byte[] input, SecretKey privateKey, Cipher cipher) {
-        byte[] decryptedOutput = new byte[0];
-        try {
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            decryptedOutput = cipher.doFinal(input);
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
-            e.printStackTrace();
-        }
-        return decryptedOutput;
-    }
-
-    private static byte[] encryptInput(byte[] input, SecretKey privateKey, Cipher cipher) {
-        byte[] encryptedOutput = new byte[cipher.getBlockSize()];
-        try {
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            encryptedOutput = cipher.doFinal(input);
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
-            e.printStackTrace();
-        }
-        return encryptedOutput;
-    }
-
 }
