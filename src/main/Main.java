@@ -12,7 +12,6 @@ import java.util.Scanner;
 
 public class Main {
 //    private static String algorithm = "AES";
-    public static File keyAlgorithmFile;
     public static KeyFileManager keyManager;
     public static EncryptionFileManager decryptManager;
     public static EncryptionFileManager encryptManager;
@@ -34,7 +33,6 @@ public class Main {
                 case "2" -> encryptFile(sc);
                 case "3" -> decryptFile(sc);
             }
-
         }
     }
 
@@ -45,21 +43,19 @@ public class Main {
         System.out.println("Introduzca el nombre del fichero que desea desencriptar");
         String encryptedFileName = sc.next();
         encryptManager = new EncryptionFileManager(encryptedFileName);
-        System.out.println("Introduzca el nombre del fichero que contendra el resultado");
-        String decryptedFileName = sc.next();
+        String algorithm=getAlgorithm();
+        String decryptedFileName = encryptedFileName + ".decrypt";
         decryptManager = new EncryptionFileManager(decryptedFileName);
         byte[] input = encryptManager.readAllBytes();
         Cipher cipher = getCipher();
-//        IvParameterSpec ivParameterSpec = getIvParameterSpec();
-//        generateKey(algorithm);
-        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), getAlgorithm());
+        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
         byte[] decrypted = decryptInput(input, privateKey, cipher);
         decryptManager.writeAllBytes(decrypted);
     }
 
     private static String getAlgorithm() {
         String algorithm="";
-        try (BufferedReader is= new BufferedReader(new FileReader(keyAlgorithmFile))){
+        try (BufferedReader is= new BufferedReader(new FileReader(keyManager.getKeyFile().getName()+".algor"))){
             algorithm=is.readLine();
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -74,14 +70,14 @@ public class Main {
         System.out.println("Introduzca el nombre del fichero que desea encriptar");
         String decryptedFileName = sc.next();
         decryptManager = new EncryptionFileManager(decryptedFileName);
-        System.out.println("Introduzca el nombre del fichero que contendra el resultado");
-        String encryptedFileName = sc.next();
+        String algorithm=getAlgorithm();
+        String encryptedFileName = decryptedFileName+"."+algorithm;
         encryptManager = new EncryptionFileManager(encryptedFileName);
         byte[] input = decryptManager.readAllBytes();
         Cipher cipher = getCipher();
 //        IvParameterSpec ivParameterSpec = getIvParameterSpec();
 //        generateKey(algorithm);
-        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), getAlgorithm());
+        SecretKey privateKey = new SecretKeySpec(keyManager.readKey(), algorithm);
         byte[] encrypted = encryptInput(input, privateKey, cipher);
         encryptManager.writeAllBytes(encrypted);
     }
@@ -106,17 +102,18 @@ public class Main {
     }
 
     private static void writeAlgorithm(String algorithm) {
-        try(BufferedWriter os= new BufferedWriter(new FileWriter(keyAlgorithmFile)))
+        try(BufferedWriter os= new BufferedWriter(new FileWriter(keyManager.getKeyFile().getName()+".algor")))
         {
             os.write(algorithm);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+
     }
 
     private static Cipher getCipher() {
         Cipher cipher = null;
-        getIvParameterSpec();
+//        getIvParameterSpec();
         String algorithm=getAlgorithm();
         try {
             if (algorithm.equals("AES"))
@@ -129,19 +126,19 @@ public class Main {
         return cipher;
     }
 
-    private static IvParameterSpec getIvParameterSpec() {
-        SecureRandom random;
-        byte[] bytes = new byte[16];
-        IvParameterSpec ivSpec = null;
-        try {
-            random = SecureRandom.getInstance("SHA1PRNG");
-            random.nextBytes(bytes);
-            ivSpec = new IvParameterSpec(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return ivSpec;
-    }
+//    private static IvParameterSpec getIvParameterSpec() {
+//        SecureRandom random;
+//        byte[] bytes = new byte[16];
+//        IvParameterSpec ivSpec = null;
+//        try {
+//            random = SecureRandom.getInstance("SHA1PRNG");
+//            random.nextBytes(bytes);
+//            ivSpec = new IvParameterSpec(bytes);
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//        return ivSpec;
+//    }
 
     private static void generateKey(String algorithm) {
         SecretKey key;
@@ -150,39 +147,10 @@ public class Main {
             SecureRandom srand = SecureRandom.getInstance("SHA1PRNG");
             genClaves.init(srand);
             key = genClaves.generateKey();
-            writeKey(algorithm, key);
+            keyManager.writeKey(algorithm, key);
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void writeKey(String algorithm, SecretKey key) {
-        switch (algorithm) {
-            case "DESede" -> {
-                try {
-                    SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
-                    DESedeKeySpec keySpec = (DESedeKeySpec) keySpecFactory.getKeySpec(key, DESedeKeySpec.class);
-                    keyManager.writeByteKey(keySpec.getKey());
-                } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
-            }
-            case "DES" -> {
-                try {
-
-                    SecretKeyFactory keySpecFactory = SecretKeyFactory.getInstance(algorithm);
-                    DESKeySpec keySpec = (DESKeySpec) keySpecFactory.getKeySpec(key, DESKeySpec.class);
-                    keyManager.writeByteKey(keySpec.getKey());
-                } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
-            }
-            case "AES" -> {
-                SecretKeySpec keySpec= new SecretKeySpec(key.getEncoded(), algorithm);
-//                    PBEKeySpec keyspec = (PBEKeySpec) keySpec.getKeySpec(key, PBEKeySpec.class);
-                keyManager.writeByteKey(keySpec.getEncoded());
-            }
         }
     }
 
