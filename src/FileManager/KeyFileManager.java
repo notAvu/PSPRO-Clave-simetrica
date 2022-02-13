@@ -24,35 +24,11 @@ public class KeyFileManager {
     public void setKeyFile(File keyFile) {
         this.keyFile = keyFile;
     }
-//    private FileOutputStream keyWriter;
-//    private FileInputStream keyReader;
 
     public KeyFileManager(String fileName) {
                 keyFile = new File(fileName);
-//        try {
-//            keyFile.createNewFile();
-//        } catch (IOException exception) {
-//            exception.printStackTrace();
-////        }
-//        iniWriter();
-//        iniReader();
     }
 
-//    private void iniReader() {
-//        try {
-//            keyReader = new FileInputStream(keyFile);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void iniWriter() {
-//        try {
-//            keyWriter = new FileOutputStream(keyFile);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     private byte[] toBytes(char[] chars) {
         CharBuffer charBuffer = CharBuffer.wrap(chars);
@@ -71,13 +47,6 @@ public class KeyFileManager {
         }
     }
 
-    public void writeCharKey(char[] inputChar) {
-        try (FileOutputStream keywriter= new FileOutputStream(keyFile)){
-            keywriter.write(toBytes(inputChar));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     public void writeKey(String algorithm, SecretKey key) {
         switch (algorithm) {
             case "DESede" -> {

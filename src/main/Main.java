@@ -3,7 +3,7 @@ package main;
 import FileManager.EncryptionFileManager;
 import FileManager.KeyFileManager;
 import operators.Encrypter;
-import operators.KeyGenerator;
+import operators.CustomKeyGenerator;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -82,7 +82,7 @@ public class Main {
             default -> writeAlgorithm("AES");
         }
         String algorithm= readAlgorithm();
-        keyManager.writeKey(algorithm, KeyGenerator.generateKey(algorithm));
+        keyManager.writeKey(algorithm, CustomKeyGenerator.generateKey(algorithm));
     }
 
     private static String readAlgorithm() {
@@ -94,7 +94,6 @@ public class Main {
         }
         return algorithm;
     }
-
     private static void writeAlgorithm(String algorithm) {
         try(BufferedWriter os= new BufferedWriter(new FileWriter(keyManager.getKeyFile().getName()+".algor")))
         {

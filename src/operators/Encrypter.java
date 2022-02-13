@@ -35,9 +35,9 @@ public class Encrypter {
     private static Cipher createCipher(String algorithm) {
         Cipher cipher = null;
         try {
-            if (algorithm.equals("AES"))
-                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            else
+//            if (algorithm.equals("AES"))
+//                cipher = Cipher.getInstance(algorithm);
+//            else
                 cipher=Cipher.getInstance(algorithm);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
